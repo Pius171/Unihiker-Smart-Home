@@ -18,8 +18,8 @@
 #include "esp_camera.h"
 
 
-const char* ssid = "";
-const char* password = "";
+const char* ssid = "GalaxyA13";
+const char* password = "folp5309";
 
 String serverName = "192.168.212.226";   // REPLACE WITH YOUR Raspberry Pi IP ADDRESS
 //String serverName = "example.com";   // OR REPLACE WITH YOUR DOMAIN NAME
@@ -109,6 +109,17 @@ void setup() {
     ESP.restart();
   }
 
+    sensor_t *s = esp_camera_sensor_get();
+      s->set_vflip(s, 1);        // flip it back
+       s->set_brightness(s, 1);   // up the brightness just a bit
+  // // initial sensors are flipped vertically and colors are a bit saturated
+  // if (s->id.PID == OV3660_PID) {
+  //   Serial.println("flip");
+  //   s->set_vflip(s, 1);        // flip it back
+  //   s->set_brightness(s, 1);   // up the brightness just a bit
+  //   s->set_saturation(s, -2);  // lower the saturation
+  // }
+
   sendPhoto(); 
 }
 
@@ -136,8 +147,8 @@ String sendPhoto() {
 
   if (client.connect(serverName.c_str(), serverPort)) {
     Serial.println("Connection successful!");    
-    String head = "--RandomNerdTutorials\r\nContent-Disposition: form-data; name=\"file\"; filename=\"door-cam.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n";
-    String tail = "\r\n--RandomNerdTutorials--\r\n";
+    String head = "--unihiker-smart-home\r\nContent-Disposition: form-data; name=\"file\"; filename=\"door-cam.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n";
+    String tail = "\r\n--unihiker-smart-home--\r\n";
 
     uint32_t imageLen = fb->len;
     uint32_t extraLen = head.length() + tail.length();
@@ -146,7 +157,7 @@ String sendPhoto() {
     client.println("POST " + serverPath + " HTTP/1.1");
     client.println("Host: " + serverName);
     client.println("Content-Length: " + String(totalLen));
-    client.println("Content-Type: multipart/form-data; boundary=RandomNerdTutorials");
+    client.println("Content-Type: multipart/form-data; boundary=unihiker-smart-home");
     client.println();
     client.print(head);
   
@@ -186,7 +197,7 @@ String sendPhoto() {
       if (getBody.length()>0) { break; }
     }
     Serial.println();
-    client.stop();
+    //client.stop();
     Serial.println(getBody);
   }
   else {
