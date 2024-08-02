@@ -4,9 +4,15 @@ from unihiker import GUI   # Import the package
 from dataclasses import dataclass 
 import time
 from pinpong.board import Board, Pin, Tone  # Import the Board, Pin, and Tone modules from the pinpong.board package
+import requests
 
 debug = True
 gui = GUI()  # Instantiate the GUI class
+
+#esp32 node url
+node_url= "http://192.168.0.123/pin"
+
+#when request fail raise notification and dont update button
 
 @dataclass
 class button:
@@ -19,15 +25,28 @@ class button:
 
 def switch_clicked(button):
     gui.remove(button.image)
+    
     if button.state:
         button.image= gui.draw_image(x=button.cor[0], y=button.cor[1], w=50, h=50, image='/root/my_codes/smart_home/images/power-button-off.png', onclick=lambda: switch_clicked(button))
+        
     else:
         button.image= gui.draw_image(x=button.cor[0], y=button.cor[1], w=50, h=50, image='/root/my_codes/smart_home/images/power-button-on.png', onclick=lambda: switch_clicked(button))
+    
     button.state=not button.state
-    if debug:
-        print(button.name,button.state)
+    data = {button.name:button.state}
 
-Board().begin()  # Initialize the board, choose the board type and port number (auto-detection if not specified)
+    response = requests.post(node_url, json=data)
+    
+    
+    if debug:
+        print(response.status_code)
+        print(response.text)
+        print(button.name,button.state)
+    #make request
+    data = {button.name:button.state}
+
+
+Board().begin("UNIHIKER")  # Initialize the board, choose the board type and port number (auto-detection if not specified)
 
 tone = Tone(Pin(Pin.P26))  # Create a Tone object with Pin.P26 for analog output
 tone.freq(200)  # Set the frequency to 200 for the tone playback
