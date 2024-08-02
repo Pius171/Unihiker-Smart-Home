@@ -1,6 +1,5 @@
-
-// 
 /*
+  Code adapted from Random Nerd tutorials
   Rui Santos
   Complete project details at https://RandomNerdTutorials.com/esp32-cam-post-image-photo-server/
   
@@ -16,20 +15,22 @@
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp_camera.h"
+#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 
+const char *ssid = "pius_mifi";
+const char *password = "qwertyuiop0987654321..";
 
-const char* ssid = "GalaxyA13";
-const char* password = "folp5309";
-
-String serverName = "192.168.212.226";   // REPLACE WITH YOUR Raspberry Pi IP ADDRESS
+String serverName = "192.168.0.187";   // REPLACE WITH YOUR Raspberry Pi IP ADDRESS
 //String serverName = "example.com";   // OR REPLACE WITH YOUR DOMAIN NAME
 
-String serverPath = "/upload";     // The default serverPath 
+String serverPath = "/upload";     // The default serverPath should be upload.php
 
 const int serverPort = 5001;
 
 WiFiClient client;
 
+// board: m5unitcam
+// CAMERA_MODEL_M5STACK_V2_PSRAM
 #define PWDN_GPIO_NUM  -1
 #define RESET_GPIO_NUM 15
 #define XCLK_GPIO_NUM  27
@@ -48,7 +49,7 @@ WiFiClient client;
 #define HREF_GPIO_NUM  26
 #define PCLK_GPIO_NUM  21
 
-const int timerInterval = 30000;    // time between each HTTP POST image
+const int timerInterval = 3000;    // time between each HTTP POST image
 unsigned long previousMillis = 0;   // last time image was sent
 
 void setup() {
@@ -56,17 +57,25 @@ void setup() {
   Serial.begin(115200);
 
   WiFi.mode(WIFI_STA);
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  WiFi.begin(ssid, password);  
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.println();
-  Serial.print("ESP32-CAM IP Address: ");
-  Serial.println(WiFi.localIP());
+
+  WiFiManager wm;
+
+bool res;
+    // res = wm.autoConnect(); // auto generated AP name from chipid
+    res = wm.autoConnect("Door-cam"); // anonymous ap
+    //res = wm.autoConnect("AutoConnectAP","password"); // password protected ap
+
+  // Serial.println();
+  // Serial.print("Connecting to ");
+  // Serial.println(ssid);
+  // WiFi.begin(ssid, password);  
+  // while (WiFi.status() != WL_CONNECTED) {
+  //   Serial.print(".");
+  //   delay(500);
+  // }
+  // Serial.println();
+  // Serial.print("ESP32-CAM IP Address: ");
+  // Serial.println(WiFi.localIP());
 
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -108,18 +117,8 @@ void setup() {
     delay(1000);
     ESP.restart();
   }
-
     sensor_t *s = esp_camera_sensor_get();
       s->set_vflip(s, 1);        // flip it back
-       s->set_brightness(s, 1);   // up the brightness just a bit
-  // // initial sensors are flipped vertically and colors are a bit saturated
-  // if (s->id.PID == OV3660_PID) {
-  //   Serial.println("flip");
-  //   s->set_vflip(s, 1);        // flip it back
-  //   s->set_brightness(s, 1);   // up the brightness just a bit
-  //   s->set_saturation(s, -2);  // lower the saturation
-  // }
-
   sendPhoto(); 
 }
 
@@ -147,8 +146,8 @@ String sendPhoto() {
 
   if (client.connect(serverName.c_str(), serverPort)) {
     Serial.println("Connection successful!");    
-    String head = "--unihiker-smart-home\r\nContent-Disposition: form-data; name=\"file\"; filename=\"door-cam.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n";
-    String tail = "\r\n--unihiker-smart-home--\r\n";
+    String head = "--RandomNerdTutorials\r\nContent-Disposition: form-data; name=\"file\"; filename=\"door-cam.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n";
+    String tail = "\r\n--RandomNerdTutorials--\r\n";
 
     uint32_t imageLen = fb->len;
     uint32_t extraLen = head.length() + tail.length();
@@ -157,7 +156,7 @@ String sendPhoto() {
     client.println("POST " + serverPath + " HTTP/1.1");
     client.println("Host: " + serverName);
     client.println("Content-Length: " + String(totalLen));
-    client.println("Content-Type: multipart/form-data; boundary=unihiker-smart-home");
+    client.println("Content-Type: multipart/form-data; boundary=RandomNerdTutorials");
     client.println();
     client.print(head);
   
@@ -197,7 +196,7 @@ String sendPhoto() {
       if (getBody.length()>0) { break; }
     }
     Serial.println();
-    //client.stop();
+    client.stop();
     Serial.println(getBody);
   }
   else {
