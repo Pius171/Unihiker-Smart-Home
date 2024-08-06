@@ -9,46 +9,51 @@ unsigned long timer = 0;
 USBHIDMouse Mouse;
 
 #include <Wire.h>
-#define SDA 13
-#define SCL 15 
+#define SDA 4
+#define SCL 5
 
-#define AD0 3
-#define INT 1
+#define AD0 7
+#define INT 15
+#define LED 48
 
-#include <FastLED.h>
-#define PIN_LED    21
-#define NUM_LEDS   1
+#define DEBUG 1 // change to one to enable debugging
 
-CRGB leds[NUM_LEDS];
-uint8_t led_ih             = 0;
-uint8_t led_status         = 0;
-String led_status_string[] = {"Rainbow", "Red", "Green", "Blue"};
+#if DEBUG == 1  
+#define debug(x) debug(x)
+#define debugln(x) debugln(x)
+#define debugf(x, y) debugf(x, y)
 
+#else
+#define debug(x)
+#define debugln(x)
+#define debugf(x, y)
+#endif
 void setup() {
-      FastLED.addLeds<WS2812, PIN_LED, GRB>(leds, NUM_LEDS);
-   
+
+    Serial.begin(115200);
   pinMode(INT, INPUT); //int goes high when activity is detected(wakeup?)
   pinMode(AD0, OUTPUT);
+
   digitalWrite(AD0, LOW);//sets I2C adress
   delay(50);
-  Serial.begin(115200);
+ 
   Wire.begin(SDA,SCL);
 
-  Serial.println("Starting mouse work!");
+  debugln("Starting mouse work!");
   Mouse.begin();
   USB.begin();
   byte status = mpu.begin();
-  Serial.print(F("MPU6050 status: "));
-  Serial.println(status);
+  debug(F("MPU6050 status: "));
+  debugln(status);
   while(status!=0){ } // stop everything if could not connect to MPU6050
-  
-  Serial.println(F("Calculating offsets, do not move MPU6050")); // use rgb as indicator
-  leds[0] = CRGB::Red;
+  neopixelWrite(48, 255, 0, 0);  // Red, mouse in not ready stay still
+  debugln(F("Calculating offsets, do not move MPU6050")); // use rgb as indicator
+ 
   delay(2000);
   // mpu.upsideDownMounting = true; // uncomment this line if the MPU6050 is mounted upside-down
   mpu.calcOffsets(); // gyro and accelero
-  Serial.println("Done!\n");
-  leds[0] = CRGB::Green;
+  debugln("Done!\n");
+neopixelWrite(LED, 0, 255, 0);  // Green, meaning mouse is ready
   }
   
 
@@ -63,15 +68,15 @@ void loop() {
   
   
   if((millis()-timer)>10){ // print data every 10ms
-  Serial.print("X : ");
-  Serial.print(mpu.getAngleX());
-  Serial.print(x);
-  Serial.print("\tY : ");
-  Serial.print(mpu.getAngleY());
-  Serial.print(y);
-  Serial.print("\tZ : ");
-  Serial.println(mpu.getAngleZ());
-  Serial.print(z);
+  debug("X : ");
+  debug(mpu.getAngleX());
+  debug(x);
+  debug("\tY : ");
+  debug(mpu.getAngleY());
+  debug(y);
+  debug("\tZ : ");
+  debugln(mpu.getAngleZ());
+  debug(z);
   
   timer = millis();  
   }
