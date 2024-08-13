@@ -4,13 +4,12 @@
 #include <ESPmDNS.h>
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 
-const char *ssid = "pius_mifi";
-const char *password = "qwertyuiop0987654321..";
 
-// const char *ssid = "GalaxyA13";
-// const char *password = "folp5309";
 
 WebServer server(80);
+#define NORDIC_NODE Serial2
+#define RXD2 16
+#define TXD2 17
 
 const int led = 13;
 
@@ -39,24 +38,13 @@ void handleNotFound() {
 
 void setup(void) {
   pinMode(led, OUTPUT);
+  pinMode(4,INPUT_PULLUP);
   digitalWrite(led, 0);
   Serial.begin(115200);
+  Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
+  //Serial2.begin(115200);
 
   WiFi.mode(WIFI_STA);
-  //Set your Static IP address
-// IPAddress local_IP(192, 168, 0, 123);
-
-// // Set your Gateway IP address
-// IPAddress gateway(192, 168, 0, 1);
-
-// IPAddress subnet(255, 255, 255, 0);
-// IPAddress primaryDNS(192, 168, 0, 1); // optionalS
-// IPAddress secondaryDNS(0, 0, 0, 0); // optional
-
-// //Configures static IP address
-// if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
-//   Serial.println("STA Failed to configure");
-// }
 
 WiFiManager wm;
 
@@ -83,7 +71,8 @@ WiFiManager wm;
     server.on("/pin", []() {
     String response = server.arg("plain");
     Serial.println(response);
-    server.send(200, "text/plain", "this works as well");
+    NORDIC_NODE.println(response);
+    server.send(200, "text/plain", "received with thanks");
   });
 
   server.onNotFound(handleNotFound);
@@ -93,6 +82,9 @@ WiFiManager wm;
 }
 
 void loop(void) {
+  if(digitalRead(4)==LOW){
+    Serial.println("4 is low");
+  }
   server.handleClient();
   delay(2);  //allow the cpu to switch to other tasks
 }

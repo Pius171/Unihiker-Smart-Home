@@ -22,7 +22,7 @@ code adapted from Rui santos tutorial on RandomNerd Tutorials
 
 bool connectedFlag = true;
 
-String serverName = "192.168.0.187";  // REPLACE unihiker  IP ADDRESS
+String serverName = "192.168.0.187";  // REPLACE with flask server IP ADDRESS running on unihiker
 
 
 String serverPath = "/upload";  // The default serverPath 
@@ -54,6 +54,7 @@ WiFiClient client;
 
 
 #define BELL_BUTTON 4
+#define LED 13
 
 
 void setup() {
@@ -115,6 +116,8 @@ void setup() {
   s->set_vflip(s, 1);  // flip it back
                        // sendPhoto();
   pinMode(BELL_BUTTON, INPUT_PULLUP);
+  pinMode(LED,OUTPUT);
+  digitalWrite(LED,1);// turn off LED, to indicate camera is not ready. LED is active low
   Serial.println("connecting to Server");
 }
 
@@ -124,12 +127,12 @@ void loop() {
 
   while (!client.connect(serverName.c_str(), serverPort)) {
     Serial.print(".");
-
-
+    digitalWrite(LED,1);// turn off LED, to indicate bot connected to server. LED is active low
   }
   if (connectedFlag) {
     //print connection successful once
     Serial.println("Connection successful!");
+    digitalWrite(LED,0);// turn on LED, to indicate successful connection to server. LED is active low
     connectedFlag = false;
   }
 
@@ -146,9 +149,10 @@ void loop() {
       Serial.println("Initializing camera.");
       while (!fb) {
         Serial.print(".");
-
+        
       }
       Serial.println("Camera is ready");
+      digitalWrite(LED,0);// turn on LED, to indicate camera is ready. LED is active low
       uint32_t imageLen = fb->len;
       uint32_t extraLen = head.length() + tail.length();
       uint32_t totalLen = imageLen + extraLen;
