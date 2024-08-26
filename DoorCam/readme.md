@@ -1,4 +1,4 @@
-# done with everything for the camera
+
 
 debugging
 - if led is not coming on, it means there is an issue connecting with the server. it could be one of the follwing
